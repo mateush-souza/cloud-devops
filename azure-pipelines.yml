@@ -32,20 +32,20 @@ stages:
       inputs:
         version: '8.0.x'
     
-    # Restaurar dependências
-    - task: DotNetCoreCLI@2
+    # Restaurar dependências usando script
+    - script: |
+        echo "Procurando arquivos .csproj..."
+        find . -name "*.csproj"
+        echo "Restaurando dependências..."
+        dotnet restore
       displayName: 'Restore NuGet Packages'
-      inputs:
-        command: 'restore'
-        projects: 'src/**/*.csproj'
+      workingDirectory: '$(Build.SourcesDirectory)'
     
-    # Build da aplicação
-    - task: DotNetCoreCLI@2
+    # Build da aplicação usando script
+    - script: |
+        dotnet build --configuration $(buildConfiguration) --no-restore
       displayName: 'Build Solution'
-      inputs:
-        command: 'build'
-        projects: 'src/**/*.csproj'
-        arguments: '--configuration $(buildConfiguration) --no-restore'
+      workingDirectory: '$(Build.SourcesDirectory)'
     
     # Executar testes (se existir pasta tests)
     - task: DotNetCoreCLI@2
