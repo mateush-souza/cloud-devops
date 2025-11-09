@@ -102,7 +102,7 @@ stages:
           - task: AzureWebAppContainer@1
             displayName: 'Deploy Docker Image to Azure Web App'
             inputs:
-              azureSubscription: 'ACR-Connection'
+              azureSubscription: 'Azure-RM-Connection'
               appName: 'webapp-motoconnect-558424' 
               containers: |
                 $(containerRegistry)/$(imageRepository):latest
