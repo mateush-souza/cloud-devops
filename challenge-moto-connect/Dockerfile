@@ -1,23 +1,32 @@
-# build stage
+# Etapa 1 - Build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# copy solution and restore
-COPY chalenge-moto-connect.sln ./
-COPY src/Api/Api.csproj src/Api/Api.csproj
-COPY src/Application/Application.csproj src/Application/Application.csproj
-COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/Infrastructure.csproj
-COPY src/Domain/Domain.csproj src/Domain/Domain.csproj
-RUN dotnet restore ./src/Api/Api.csproj -r linux-x64
+# Copia solução e projetos
+COPY challenge-moto-connect.sln ./
+COPY src/Api/Api.csproj src/Api/
+COPY src/Application/Application.csproj src/Application/
+COPY src/Infrastructure/Infrastructure.csproj src/Infrastructure/
+COPY src/Domain/Domain.csproj src/Domain/
 
-# copy full source and publish
+# Restaura dependências
+RUN dotnet restore src/Api/Api.csproj -r linux-x64
+
+# Copia tudo e publica
 COPY . .
-RUN dotnet publish src/Api/Api.csproj -c Release -r linux-x64 -o /app/publish --no-restore
+RUN dotnet publish src/Api/Api.csproj -c Release -r linux-x64 -o /out --no-restore
 
-# runtime stage
-FROM mcr.microsoft.com/dotnet/aspnet:8.0
+# Etapa 2 - Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
-ENV ASPNETCORE_URLS=http://0.0.0.0:8080
+
+# Define a porta e URLs
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-COPY --from=build /app/publish .
+
+# Copia os artefatos publicados da etapa anterior
+COPY --from=build /out .
+
+# Nome correto da DLL (baseado no seu .csproj)
 ENTRYPOINT ["dotnet", "Api.dll"]
+

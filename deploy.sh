@@ -8,14 +8,14 @@ NC='\033[0m'
 
 echo -e "${YELLOW}Etapa 1: Configurando variáveis...${NC}"
 
-RESOURCE_GROUP="rg-challenge-fiap-557884"
+RESOURCE_GROUP="rg-challenge-fiap-558424"
 LOCATION="brazilsouth"
-DB_SERVER_NAME="sql-motoconnect-557884"
+DB_SERVER_NAME="sql-motoconnect-558424"
 DB_NAME="motoconnectdb"
-APP_SERVICE_PLAN="asp-motoconnect-fiap-557884"
-WEB_APP_NAME="webapp-motoconnect-557884"
-DB_ADMIN_USER="${DB_ADMIN_USER:-}"
-DB_ADMIN_PASSWORD="${DB_ADMIN_PASSWORD:-}"
+APP_SERVICE_PLAN="asp-motoconnect-fiap-558424"
+WEB_APP_NAME="webapp-motoconnect-558424"
+DB_ADMIN_USER="admin_cloud"
+DB_ADMIN_PASSWORD="Senhaforte123!"
 
 if [ -z "$DB_ADMIN_USER" ] || [ -z "$DB_ADMIN_PASSWORD" ]; then
     echo -e "${YELLOW}Erro: DB_ADMIN_USER e DB_ADMIN_PASSWORD devem ser definidos como variáveis de ambiente${NC}"
@@ -121,7 +121,7 @@ az webapp create \
     --resource-group $RESOURCE_GROUP \
     --plan $APP_SERVICE_PLAN \
     --name $WEB_APP_NAME \
-    --runtime "DOTNET|8.0" \
+    --runtime "DOTNETCORE:8.0" \
     --output none
 echo -e "${GREEN}✓ Web App criado${NC}\n"
 
