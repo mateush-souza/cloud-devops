@@ -2,7 +2,7 @@
 trigger:
   branches:
     include:
-      - master
+      - main
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -105,4 +105,4 @@ stages:
               azureSubscription: 'Azure-RM-Connection'
               appName: 'webapp-motoconnect-558424' 
               containers: |
-                $(containerRegistry)/$(imageRepository):latest
+                $(containerRegistry)/$(imageRepository):$(Build.BuildId)
