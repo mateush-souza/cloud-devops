@@ -13,6 +13,7 @@ namespace challenge_moto_connect.Application.Services
         Task DeleteUserAsync(Guid id);
         Task<PagedListDto<UserDTO>> GetPagedUsersAsync(PaginationParams paginationParams);
         Task<UserDTO> GetUserByEmailAsync(string email);
+        Task<UserDTO> AuthenticateAsync(string email, string password);
     }
 }
 

@@ -14,6 +14,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using System.IO;
+using System.Threading;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using challenge_moto_connect.Api.HealthChecks;
+using System.Linq;
 
 namespace challenge_moto_connect
 {
@@ -25,6 +31,39 @@ namespace challenge_moto_connect
 
             builder.Services.AddControllers().AddNewtonsoftJson();
 
+            var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+            var allowedOriginsRaw = builder.Configuration["Cors:AllowedOrigins"];
+
+            if (!string.IsNullOrWhiteSpace(allowedOriginsRaw))
+            {
+                var runtimeOrigins = allowedOriginsRaw.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                allowedOrigins = allowedOrigins.Concat(runtimeOrigins).ToArray();
+            }
+
+            allowedOrigins = allowedOrigins
+                .Where(origin => !string.IsNullOrWhiteSpace(origin))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("DefaultCorsPolicy", policy =>
+                {
+                    if (allowedOrigins.Length == 0 || allowedOrigins.Contains("*", StringComparer.OrdinalIgnoreCase))
+                    {
+                        policy.AllowAnyOrigin();
+                    }
+                    else
+                    {
+                        policy.WithOrigins(allowedOrigins);
+                    }
+
+                    policy.AllowAnyHeader();
+                    policy.AllowAnyMethod();
+                    policy.WithExposedHeaders("X-Pagination");
+                });
+            });
+
             builder.Services.AddApiVersioning(config =>
             {
                 config.DefaultApiVersion = new ApiVersion(1, 0);
@@ -33,10 +72,24 @@ namespace challenge_moto_connect
                 config.ApiVersionReader = new UrlSegmentApiVersionReader();
             });
 
+            builder.Services.AddVersionedApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'VVV";
+                options.SubstituteApiVersionInUrl = true;
+            });
+
             builder.Services.AddHealthChecks()
-                .AddDbContextCheck<ChallengeMotoConnectContext>();
+                .AddDbContextCheck<ChallengeMotoConnectContext>(name: "database", tags: new[] { "ready" })
+                .AddCheck<MemoryHealthCheck>("memory", tags: new[] { "ready" })
+                .AddCheck<CpuHealthCheck>("cpu", tags: new[] { "ready" })
+                .AddDiskStorageHealthCheck(options => options.AddDrive("/", 1024), name: "disk", tags: new[] { "ready" })
+                .AddProcessAllocatedMemoryHealthCheck(512, name: "process_memory", tags: new[] { "live" });
 
             builder.Services.AddEndpointsApiExplorer();
+
+            var jwtKey = builder.Configuration["Jwt:Key"] ?? "EstaEChaveSecretaParaJWTChallengeMotoConnectComMinimoTrintaEDoisCaracteres2024";
+            var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "MotoConnectIssuer";
+            var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "MotoConnectAudience";
 
             builder.Services.AddAuthentication(options =>
             {
@@ -50,27 +103,36 @@ namespace challenge_moto_connect
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                    ValidAudience = builder.Configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+                    ValidIssuer = jwtIssuer,
+                    ValidAudience = jwtAudience,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
                 };
             });
             builder.Services.AddSwaggerGen(x =>
             {
-                x.SwaggerDoc(
-                    "v1",
-                    new OpenApiInfo
+                x.SwaggerDoc("v1", new OpenApiInfo
                     {
-                        Title = builder.Configuration["Swagger:Title"],
+                    Title = builder.Configuration["Swagger:Title"] ?? "Moto Connect - Challenge",
                         Version = "v1",
-                        Description = builder.Configuration["Swagger:Description"],
+                    Description = builder.Configuration["Swagger:Description"] ?? "API para gerenciamento de motocicletas",
+                    Contact = new OpenApiContact()
+                    {
+                        Name = "Moto Connect",
+                        Email = builder.Configuration["Swagger:Email"] ?? "rm558424@fiap.com.br",
+                    },
+                });
+
+                x.SwaggerDoc("v2", new OpenApiInfo
+                {
+                    Title = builder.Configuration["Swagger:Title"] ?? "Moto Connect - Challenge",
+                    Version = "v2",
+                    Description = "API v2 com melhorias e novos recursos",
                         Contact = new OpenApiContact()
                         {
                             Name = "Moto Connect",
-                            Email = "rm558424@fiap.com.br",
+                        Email = builder.Configuration["Swagger:Email"] ?? "rm558424@fiap.com.br",
                         },
-                    }
-                );
+                });
 
                 x.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
                 {
@@ -109,50 +171,104 @@ namespace challenge_moto_connect
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IHistoryService, HistoryService>();
             builder.Services.AddScoped<IVehicleService, VehicleService>();
+            builder.Services.AddSingleton<IMLService, MLService>();
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             builder.Services.AddHttpContextAccessor();
 
             var app = builder.Build();
 
-            // Aplicar migrations automaticamente no startup
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            else
+            {
+                app.UseExceptionHandler("/error");
+            }
+
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
                 try
                 {
                     var context = services.GetRequiredService<ChallengeMotoConnectContext>();
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    
+                    logger.LogInformation("Verificando conexão com banco de dados...");
+                    
+                    var maxRetries = 5;
+                    var retryCount = 0;
+                    var connected = false;
+                    
+                    while (retryCount < maxRetries && !connected)
+                    {
+                        try
+                        {
+                            connected = context.Database.CanConnect();
+                            if (connected)
+                            {
+                                logger.LogInformation("Banco de dados conectado com sucesso.");
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            retryCount++;
+                            logger.LogWarning("Tentativa {RetryCount}/{MaxRetries} de conexão falhou: {Message}", retryCount, maxRetries, ex.Message);
+                            if (retryCount < maxRetries)
+                            {
+                                Thread.Sleep(TimeSpan.FromSeconds(5));
+                            }
+                        }
+                    }
+                    
+                    if (connected)
+                    {
+                        logger.LogInformation("Aplicando migrations...");
                     context.Database.Migrate();
+                        logger.LogInformation("Migrations aplicadas com sucesso.");
+                    }
+                    else
+                    {
+                        logger.LogError("Não foi possível conectar ao banco de dados após {MaxRetries} tentativas. A aplicação continuará, mas migrations não foram aplicadas.", maxRetries);
+                    }
                 }
                 catch (Exception ex)
                 {
                     var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "Erro ao aplicar migrations durante startup");
+                    logger.LogError(ex, "Erro ao aplicar migrations durante startup: {Message}. StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 }
             }
 
             app.UseSwagger();
-            app.UseSwaggerUI();
-            app.UseHttpsRedirection();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Moto Connect API v1");
+                c.SwaggerEndpoint("/swagger/v2/swagger.json", "Moto Connect API v2");
+                c.RoutePrefix = "swagger";
+                c.DisplayRequestDuration();
+            });
+
+            app.UseCors("DefaultCorsPolicy");
+
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+            app.MapHealthChecks("/health", new HealthCheckOptions
             {
-                ResponseWriter = async (context, report) =>
-                {
-                    context.Response.ContentType = "application/json";
-                    var response = new
-                    {
-                        status = report.Status.ToString(),
-                        checks = report.Entries.Select(e => new
-                        {
-                            component = e.Key,
-                            status = e.Value.Status.ToString(),
-                            description = e.Value.Description
-                        })
-                    };
-                    await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
-                }
+                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+            });
+
+            app.MapHealthChecks("/health/ready", new HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("ready"),
+                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+            });
+
+            app.MapHealthChecks("/health/live", new HealthCheckOptions
+            {
+                Predicate = check => check.Tags.Contains("live"),
+                ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
             });
 
             app.MapControllers();
@@ -172,6 +288,8 @@ namespace challenge_moto_connect
                     return Task.CompletedTask;
                 }
             );
+
+            app.MapGet("/error", () => Results.Problem("Ocorreu um erro interno no servidor."));
 
             app.Run();
         }

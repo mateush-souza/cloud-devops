@@ -21,17 +21,13 @@ namespace challenge_moto_connect.Infrastructure.Persistence.Mappings
 
             builder
                 .Property(u => u.Password)
-                .HasConversion(p => p.Value, p => new Domain.ValueObjects.Password(p))
+                .HasConversion(p => p.Value, p => Domain.ValueObjects.Password.FromHash(p))
                 .IsRequired()
-                .HasMaxLength(100);
+                .HasMaxLength(500);
 
             builder
                 .Property(u => u.Type)
                 .IsRequired();
-
-
-
-
         }
     }
 }

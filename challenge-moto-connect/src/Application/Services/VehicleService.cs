@@ -48,7 +48,7 @@ namespace challenge_moto_connect.Application.Services
             {
                 VehicleId = Guid.NewGuid(),
                 LicensePlate = vehicleDto.LicensePlate,
-                VehicleModel = (VehicleModel)Enum.Parse(typeof(VehicleModel), vehicleDto.VehicleModel)
+                VehicleModel = ParseVehicleModel(vehicleDto.VehicleModel)
             };
             await _vehicleRepository.AddAsync(vehicle);
             return new VehicleDTO
@@ -65,7 +65,7 @@ namespace challenge_moto_connect.Application.Services
             if (vehicle == null) throw new KeyNotFoundException("Vehicle not found.");
 
             vehicle.LicensePlate = vehicleDto.LicensePlate;
-            vehicle.VehicleModel = (VehicleModel)Enum.Parse(typeof(VehicleModel), vehicleDto.VehicleModel);
+            vehicle.VehicleModel = ParseVehicleModel(vehicleDto.VehicleModel);
 
             await _vehicleRepository.UpdateAsync(vehicle);
         }
@@ -91,6 +91,20 @@ namespace challenge_moto_connect.Application.Services
             }).ToList();
 
             return new PagedListDto<VehicleDTO>(vehicleDtos, pagedVehicles.TotalCount, pagedVehicles.CurrentPage, pagedVehicles.PageSize);
+        }
+
+        private static VehicleModel ParseVehicleModel(string vehicleModel)
+        {
+            if (string.IsNullOrWhiteSpace(vehicleModel))
+                throw new ArgumentException("Vehicle model is required.");
+
+            var normalized = new string(vehicleModel.Where(char.IsLetter).ToArray()).ToUpperInvariant();
+
+            if (Enum.TryParse<VehicleModel>(normalized, true, out var model))
+                return model;
+
+            var allowed = string.Join(", ", Enum.GetNames(typeof(VehicleModel)));
+            throw new ArgumentException($"Modelo de veículo inválido. Valores permitidos: {allowed}.");
         }
     }
 }
