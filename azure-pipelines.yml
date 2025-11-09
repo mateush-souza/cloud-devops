@@ -10,9 +10,9 @@ pool:
 variables:
   buildConfiguration: 'Release'
   dockerImageName: 'motoconnect-api'
-  dockerRegistryServiceConnection: 'ACR-Connection' # conexão de serviço do ACR
+  dockerRegistryServiceConnection: 'ACR-Connection'
   imageRepository: 'motoconnect-api'
-  containerRegistry: 'acrMotoConnect.azurecr.io' # sem o BuildId aqui — nome fixo do ACR
+  containerRegistry: 'acrMotoConnect.azurecr.io'
 
 stages:
 # ------------------ CI ------------------
@@ -103,6 +103,6 @@ stages:
             displayName: 'Deploy Docker Image to Azure Web App'
             inputs:
               azureSubscription: 'ACR-Connection'
-              appName: 'motoconnect-api'  # Nome exato do seu App Service
+              appName: 'webapp-motoconnect-558424' 
               containers: |
                 $(containerRegistry)/$(imageRepository):latest
