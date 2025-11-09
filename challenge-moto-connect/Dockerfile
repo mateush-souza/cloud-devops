@@ -6,7 +6,7 @@ WORKDIR /src
 COPY . .
 
 # Restaurar dependências do projeto Api
-WORKDIR /src/challenge-moto-connect
+WORKDIR /src
 RUN dotnet restore "src/Api/Api.csproj"
 
 # Build do projeto
