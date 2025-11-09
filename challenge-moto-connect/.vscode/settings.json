@@ -1,0 +1,4 @@
+{
+	"appService.preDeployTask": "publish-api",
+	"appService.deploySubpath": "publish"
+} 

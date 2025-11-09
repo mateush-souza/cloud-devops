@@ -1,0 +1,31 @@
+@challenge_moto_connect_HostAddress = http://localhost:5214
+
+### Get all users
+GET {{challenge_moto_connect_HostAddress}}/api/User
+Accept: application/json
+
+###
+
+### Get user by ID
+GET {{challenge_moto_connect_HostAddress}}/api/User/{id}
+Accept: application/json
+
+###
+
+### Get all vehicles
+GET {{challenge_moto_connect_HostAddress}}/api/Vehicles
+Accept: application/json
+
+###
+
+### Get all maintenance histories
+GET {{challenge_moto_connect_HostAddress}}/api/Histories
+Accept: application/json
+
+###
+
+### Swagger UI
+GET {{challenge_moto_connect_HostAddress}}/swagger
+Accept: text/html
+
+###

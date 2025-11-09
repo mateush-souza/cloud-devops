@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "publish-api",
+			"type": "shell",
+			"command": "dotnet publish src/Api/Api.csproj -c Release -o publish",
+			"problemMatcher": ["$msCompile"]
+		}
+	]
+} 
