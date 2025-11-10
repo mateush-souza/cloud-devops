@@ -1,151 +1,114 @@
-# 🏍️ Moto Connect - Challenge (4ª Entrega)
+# Challenge FIAP: API Moto Connect
 
-> API RESTful desenvolvida em ASP.NET Core 8.0, seguindo os princípios de Clean Architecture e Domain-Driven Design (DDD), com foco em boas práticas REST, segurança, observabilidade e Machine Learning.
+![.NET](https://img.shields.io/badge/.NET-8.0-blue?style=for-the-badge&logo=dotnet)
+![Azure](https://img.shields.io/badge/Azure-App_Service-blue?style=for-the-badge&logo=microsoftazure)
+![SQL Server](https://img.shields.io/badge/Azure-SQL_Database-blue?style=for-the-badge&logo=microsoftsqlserver)
 
-[![.NET Core](https://img.shields.io/badge/.NET%20Core-8.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
-[![Swagger](https://img.shields.io/badge/Swagger-85EA2D?style=flat-square&logo=swagger&logoColor=black)](https://swagger.io/)
-[![xUnit](https://img.shields.io/badge/Tests-xUnit-000000?style=flat-square&logo=xunit)](https://xunit.net/)
+##  1. Visão Geral da Solução
 
-## 📋 Sobre
+A **API Moto Connect** é o backend central para a gestão da frota de motociclos da Mottu. Desenvolvida em .NET 8 com uma arquitetura limpa, a solução oferece endpoints RESTful para gerir utilizadores, veículos e o seu histórico de utilização. O projeto foi implementado na nuvem da Microsoft Azure para garantir alta disponibilidade, escalabilidade e segurança.
 
-O Moto Connect é uma solução para gerenciamento de motocicletas. Esta versão da API foi atualizada para a 4ª entrega do Challenge, incorporando requisitos avançados de desenvolvimento, DevOps e Arquiteturas Disruptivas.
+### Principais Benefícios
 
-## ✨ Requisitos da 4ª Entrega Implementados
+* ** Centralização da Informação:** Um único ponto de verdade para todos os dados da frota.
+* ** Otimização Operacional:** Reduz a complexidade da gestão diária de veículos e utilizadores.
+* ** Escalabilidade e Integração:** Preparada para crescer e ser consumida por diversas aplicações clientes (Mobile, Web, BI).
 
-| Requisito | Pontuação | Status |
-| :--- | :--- | :--- |
-| **Health Checks** | 10 pts | Implementado no endpoint `/health`. |
-| **Versionamento da API** | 10 pts | Implementado via URL (`/api/v{version}/...`). |
-| **Segurança da API (JWT)** | 25 pts | Implementado autenticação via Bearer Token (JWT). |
-| **Integração ML.NET** | 25 pts | Adicionado endpoint de predição de manutenção (`/api/v1/ml/predict-maintenance`). |
-| **Testes Unitários com xUnit** | 30 pts | Projeto de testes (`challenge-moto-connect.Tests`) adicionado com testes unitários e de integração. |
-| **Estrutura para IoT/Visão Computacional** | - | Adicionado endpoint `/api/telemetry` e entidade `TelemetryData`. |
-| **Preparação para DevOps (App Service)** | - | Criados `script_bd.sql` e `azure_cli_scripts.md` para deploy na Azure. |
+---
 
-## 📦 Tecnologias Utilizadas
+### Vídeo explicativo da solução:
 
-- **ASP.NET Core 8.0**
-- **Entity Framework Core**
-- **JWT Bearer Authentication**
-- **ML.NET** (Machine Learning)
-- **xUnit & Moq** (Testes)
-- **Swagger/OpenAPI**
-- **Clean Architecture & DDD**
+* ** https://www.youtube.com/watch?v=W5D3F2VEr3w
 
-## 🔗 Endpoints Principais
+---
 
-| Método | Endpoint | Descrição | Segurança |
-| :--- | :--- | :--- | :--- |
-| **POST** | `/api/v1/auth/login` | Gera o token JWT para acesso. | **Livre** |
-| **GET** | `/health` | Verifica a saúde da API e do banco de dados. | **Livre** |
-| **POST** | `/api/v1/ml/predict-maintenance` | Predição de necessidade de manutenção (ML.NET). | **JWT** |
-| **POST** | `/api/telemetry` | Recebe dados de telemetria (IoT/Visão Computacional). | **Livre** |
-| **GET** | `/api/v1/users` | Lista usuários (com paginação e HATEOAS). | **JWT** |
-| **GET** | `/api/v1/vehicles` | Lista veículos (com paginação e HATEOAS). | **JWT** |
-| **GET** | `/api/v1/histories` | Lista históricos (com paginação e HATEOAS). | **JWT** |
+##  2. Arquitetura da Infraestrutura
 
-## 🔑 Como Obter e Usar o Token JWT
+A solução foi implementada utilizando o modelo **PaaS (Plataforma como Serviço)** da Azure, com todos os recursos provisionados via **Azure CLI** para garantir a automação e a rastreabilidade (Infraestrutura como Código).
 
-1.  **Obter o Token:**
-    Faça uma requisição `POST` para o endpoint de login:
-    - **URL:** `/api/v1/auth/login`
-    - **Body (JSON):**
-      ```json
-      {
-        "email": "seu_email@exemplo.com",
-        "password": "sua_senha"
-      }
-      ```
-    *Nota: A lógica de autenticação no `AuthController` é uma simulação. Para testes, use qualquer email/senha não vazios.*
-
-2.  **Usar o Token:**
-    Para acessar os endpoints protegidos, inclua o token retornado no cabeçalho `Authorization` da sua requisição:
-    ```
-    Authorization: Bearer <SEU_TOKEN_JWT>
-    ```
-
-## ▶️ Como Executar
-
-1.  **Restaure as dependências:**
-    ```bash
-    dotnet restore
-    ```
-
-2.  **Execute a aplicação:**
-    ```bash
-    dotnet run --project src/Api/Api.csproj
-    ```
-
-3.  **Acesse a documentação Swagger:**
-    Acesse `https://localhost:<porta>/swagger` para testar os endpoints.
-
-## 🧪 Execução dos Testes
-
-O projeto possui testes unitários e de integração implementados com xUnit, cobrindo a lógica principal da aplicação.
-
-### **Testes Implementados**
-
-1. **Testes Unitários:**
-   - `UserServiceTests.cs`: Testa a lógica de negócio do UserService
-   - `MLControllerTests.cs`: Testa o endpoint de Machine Learning
-
-2. **Testes de Integração:**
-   - `IntegrationTests.cs`: Testa endpoints básicos da API
-   - `HealthCheckIntegrationTests.cs`: Testa o endpoint de Health Check
-
-### **Como Executar os Testes**
-
-1.  **Navegue até o diretório raiz do projeto:**
-    ```bash
-    cd challenge-moto-connect
-    ```
-
-2.  **Execute todos os testes:**
-    ```bash
-    dotnet test
-    ```
-
-3.  **Execute os testes com output detalhado:**
-    ```bash
-    dotnet test --logger "console;verbosity=detailed"
-    ```
-
-4.  **Execute os testes de um projeto específico:**
-    ```bash
-    dotnet test tests/challenge-moto-connect.Tests/challenge-moto-connect.Tests.csproj
-    ```
-
-5.  **Execute os testes com cobertura de código:**
-    ```bash
-    dotnet test --collect:"XPlat Code Coverage"
-    ```
-
-### **Estrutura dos Testes**
-
-```
-tests/
-└── challenge-moto-connect.Tests/
-    ├── UserServiceTests.cs              (Testes unitários)
-    ├── MLControllerTests.cs             (Testes unitários)
-    ├── IntegrationTests.cs              (Testes de integração)
-    ├── HealthCheckIntegrationTests.cs   (Testes de integração)
-    └── GlobalUsings.cs
+```mermaid
+graph TD;
+    A[<B>GitHub Repository</B><br>mateush-souza/challenge-moto-connect] -->|1. Código-Fonte| B(
+        <B>Azure App Service</B>
+        <br>
+        <i>webapp-motoconnect-557884</i>
+        <br>
+        Hospeda a API .NET
+    );
+    B -->|2. Lê/Escreve Dados| C(
+        <B>Azure SQL Database</B>
+        <br>
+        <i>motoconnectdb</i>
+        <br>
+        Armazena os dados
+    );
+    D{Utilizador / App Cliente} -->|3. Requisições HTTPS| B;
 ```
 
-### **Observações**
+* **GitHub Repository:** Contém o código-fonte da aplicação .NET.
+* **Azure App Service:** Serviço PaaS que compila e hospeda a API. Está configurado para fazer o deploy automático a partir da branch `main`.
+* **Azure SQL Database:** Banco de dados relacional gerido que armazena todos os dados de forma segura.
 
-- Os testes de integração utilizam `WebApplicationFactory` para criar um servidor de testes
-- Os testes unitários utilizam `Moq` para criar mocks de dependências
-- Todos os testes são executados em memória e não afetam o banco de dados de produção
+---
 
-## 📁 Arquivos de Apoio para DevOps
+##  3. Como Realizar o Deploy
 
-- `script_bd.sql`: Script DDL para criação da nova tabela `TelemetryData`.
-- `azure_cli_scripts.md`: Estrutura de comandos Azure CLI para provisionamento de App Service e SQL Server.
+O processo de deploy está totalmente automatizado através de um único script.
 
-## 👨‍💻 Desenvolvedores
+### Pré-requisitos
 
-- **Mateus H. Souza** - RM: 558424
-- **Cauan Passos** - RM: 555466
-- **Lucas Fialho** - RM: 557884
-(Mantendo os nomes originais)
+* [Azure CLI](https://docs.microsoft.com/pt-br/cli/azure/install-azure-cli) instalado e autenticado (`az login`).
+* Permissões para criar recursos na sua subscrição Azure.
+
+### Passos
+
+1.  Clone este repositório.
+2.  Abra o ficheiro `deploy.sh` e preencha as variáveis `DB_ADMIN_USER` e `DB_ADMIN_PASSWORD`.
+3.  Execute o script no seu terminal:
+    ```bash
+    chmod +x deploy.sh
+    ./deploy.sh
+    ```
+4.  Aguarde a finalização. A URL da sua API será exibida no final.
+
+---
+
+##  4. Documentação da API (Endpoints)
+
+A API expõe os seguintes endpoints principais. A URL base é `https://webapp-motoconnect-557884.azurewebsites.net`.
+
+### Utilizadores (`/User`)
+
+* `GET /User`: Lista todos os utilizadores.
+* `GET /User/{id}`: Obtém um utilizador específico.
+* `POST /User`: Cria um novo utilizador.
+
+    **Exemplo de Body:**
+    ```json
+    {
+      "name": "Nome do Usuário",
+      "email": "usuario@teste.com",
+      "password": "Senha@123"
+    }
+    ```
+
+### Veículos (`/Vehicles`)
+
+* `GET /Vehicles`: Lista todos os veículos.
+* `POST /Vehicles`: Adiciona um novo veículo.
+
+    **Exemplo de Body:**
+    ```json
+    {
+      "identifier": "MOTO-001",
+      "year": 2025,
+      "model": "Honda CG 160",
+      "plate": "ABC1D23"
+    }
+    ```
+---
+
+##  5. Scripts de Entrega
+
+* **[deploy.sh](deploy.sh):** Script de criação da infraestrutura e deploy.
+* **[script_bd.sql](script_bd.sql):** Script DDL para a criação da estrutura do banco de dados.
