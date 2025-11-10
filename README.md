@@ -4,6 +4,10 @@
 ![Azure](https://img.shields.io/badge/Azure-App_Service-blue?style=for-the-badge&logo=microsoftazure)
 ![SQL Server](https://img.shields.io/badge/Azure-SQL_Database-blue?style=for-the-badge&logo=microsoftsqlserver)
 
+## Diagrama da solução
+![WhatsApp Image 2025-11-09 at 19 47 51](https://github.com/user-attachments/assets/79f4aa2b-b8d6-4963-b759-cfae3cf7136f)
+
+
 ##  1. Visão Geral da Solução
 
 A **API Moto Connect** é o backend central para a gestão da frota de motociclos da Mottu. Desenvolvida em .NET 8 com uma arquitetura limpa, a solução oferece endpoints RESTful para gerir utilizadores, veículos e o seu histórico de utilização. O projeto foi implementado na nuvem da Microsoft Azure para garantir alta disponibilidade, escalabilidade e segurança.
@@ -18,7 +22,7 @@ A **API Moto Connect** é o backend central para a gestão da frota de motociclo
 
 ### Vídeo explicativo da solução:
 
-* ** https://www.youtube.com/watch?v=W5D3F2VEr3w
+* ** https://www.youtube.com/watch?v=yh3QLdEp4y0
 
 ---
 
